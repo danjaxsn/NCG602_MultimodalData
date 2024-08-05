@@ -1,0 +1,4 @@
+"0",""
+"0","# Perform union_all to include duplicates"
+"0","union_all_df <- union_all(df2, df5)"
+"0","print(union_all_df)"

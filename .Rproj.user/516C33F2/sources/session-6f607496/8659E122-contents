@@ -1,0 +1,137 @@
+---
+title: "Class Assignment: Multimodal and Multisource Data"
+author: "Daniel Smith, PhD, AGPCNP-BC, CNE"
+date: "2024-08-05"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(janitor)
+```
+## Multimodal and Multisource Data
+
+### Environmental Data
+Environmental data includes information about the natural world, such as air quality, water quality, and weather conditions. These data are often collected through sensors and satellites.
+
+NOAA Data Sets
+- Costal Data Access Viewer: https://coast.noaa.gov/dataviewer/#/
+- Climate Data: https://www.ncei.noaa.gov/cdo-web/
+
+### Area Deprivation Index
+The Area Deprivation Index (ADI) measures socio-economic disadvantage within a geographic area. ADI is useful for identifying areas that may require additional resources and support.
+
+https://www.neighborhoodatlas.medicine.wisc.edu/
+
+Note: 5-digit ZipCode and ADI are incompatible. For this excersice, we use zipcode for purely understanding how to join data. Per the Neighborhood Atlas Website: "In recent validation work that used 2009-2013 American Community Survey data, it became clear that the ADI should not be used at any levels other than those core geographic units defined by the Census (see diagram of Census levels). Those with interest in using a ZIP-based methodology may still employ the 9-digit ZIP Code crosswalk, which was built to correspond directly to Census block groups and accompanies the Census block group level ADI."
+
+### Types of Multimodal Data
+Multimodal data involves multiple types of data (e.g., text, images, and numerical data) collected from different sources. Examples include combining satellite imagery with census data to study urban development.
+
+### Create Variables Exercise
+Let's create some variables using R. These will also be used to guide us through our joins and unions discussion below. 
+
+```{r}
+# Create sample data 
+df1 <- data.frame(ID = 1:10, Air_Quality=c(50, 42, 58, 35, 49, 60, 64, 23, 59, 20))
+df2 <- data.frame(ID = 1:8, water_quality=c(3.5, 3.8, 3.2, 3.6, 3.7, 4.3, 2.5, 4.9))
+df3 <- data.frame(ID = 1:5, area_deprivation_index=c(1.2, 1.5, 1.3, 1.4, 1.6))
+df4 <- data.frame(ID= 1:10, zipcode=c(14201:14210))
+```
+
+## Joins and Unions
+
+### Introduction to Joins
+Joins are used to combine data from two different tables based on a common column. This allows you to bring together related data from different sources into a single table for analysis.
+
+### Left Joins. 
+A left join returns all records from the left table (Table A) and the matched records from the right table (Table B). If there is no match, the result is `NA` in the columns from Table B.
+
+```{r}
+# Perform left join of df1 and df2
+left_joined_df <- left_join(df1, df2, by = "ID")
+print(left_joined_df)
+
+#Q1. Now you try! Perform a left join of df3 and 4. 
+
+```
+
+### Inner Joins
+An inner join returns only the records that have matching values in both tables. If there are rows in Table A that do not have matches in Table B, those rows will not be included in the result.
+
+```{r}
+# Perform inner join
+inner_joined_df <- inner_join(df1, df2, by = "ID")
+print(inner_joined_df)
+
+#Q2. Now you try! Perform an inner join of df2 and df3. 
+
+```
+
+### Right Joins
+A right join returns all records from the right table (Table B) and the matched records from the left table (Table A). If there is no match, the result is NA in the columns from Table A.
+
+```{r}
+# Perform right join
+right_joined_df <- right_join(df1, df2, by = "ID")
+print(right_joined_df)
+
+#Q3. Now you try! Perform an inner join of df1 and df4. 
+```
+
+### Full Joins
+A full join returns all records when there is a match in either left (Table A) or right (Table B) table. Rows that do not have a match in one of the tables will have NA in the respective columns.
+
+``` {r}
+# Perform full join
+full_joined_df <- full_join(df1, df2, by = "ID")
+print(full_joined_df)
+
+#Q4. Now you try! Perform an full join of df1, df2, df3, adn df4. 
+
+```
+
+### Cleaning Column Names
+It's important to have clean and consistent column names in your data to avoid issues during analysis. Using `janitor` package can help with that.
+
+```{r}
+# Clean column names
+cleaned_df <- clean_names(left_joined_df)
+print(cleaned_df)
+
+#Q5. What differences do you notice in the in the colomun names of `left_joined_df` after applying the `clean_names()` function?
+
+```
+The `clean_names()` function does the following: 
+
+- **Lowercase all characters:** It converts all column names to lowercase.
+- **Replaces spaces with underscores:** Spaces and other non-alphanumeric characters are replaced with underscores.
+- **Removes special characters:** It removes special characters that can cause issues in R, like punctuation.
+- **Handles duplicate names:** It ensures that column names are unique by appending numbers to duplicate names.
+
+### Unions
+Unions are used to combine the rows of two tables. The union function in R combines two data frames by rows and removes duplicate rows. If you want to keep all rows, including duplicates, use the union_all function.
+
+```{r}
+#Create additional environmental data 
+df5 <- data.frame(ID = 8:10, water_quality=c(4.9, 4.5, 4.8))
+df6 <- data.frame(ID = 5:10, area_deprivation_index=c(1.6, 1.3, 1.55, 1.7, 1.7, 1.6))
+
+# Perform union
+union_df <- union(df2, df5)
+print(union_df)
+
+# Perform union_all to include duplicates
+union_all_df <- union_all(df2, df5)
+print(union_all_df)
+
+#Not the inclusion of ID= 8 and water_quality=4.9 twice in the union_all() function. 
+
+#Q6. Now you try! Perform a union of df3 and df6 
+
+#Q7. Now you try! Perform union_all join of df1 and df4. 
+
+```
+
+## Conclusion
+This assignment covered different types of joins and unions in R. Understanding these concepts is crucial for effective data manipulation and combining datasets from different sources.
