@@ -1,0 +1,8 @@
+"0","# Example: Manually input patient ID (e.g., 3)
+patient_id_to_display <- 2  # Change this to any ID you want
+display_ecg_by_id(patient_id_to_display, final_data)
+"
+"1","[1]"
+"1"," ""No ECG image available for Patient ID: 2"""
+"1","
+"

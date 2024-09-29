@@ -1,7 +1,7 @@
 ---
 title: "Multimodal Data Analysis"
-author: "Daniel Smith"
-date: "2024-09-29"
+author: "Daniel Smith" #Students shoudl put their own names here. 
+date: "2024-09-29" #Update the date, too. 
 output: html_document
 ---
 
@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(officer)
+library(magick)
 ```
 ## Introduction
 In this assignment, we will explore multimodal data analysis, combining different types of data (text, images, numbers). The goal is to integrate these data to address a research question. TO do so, we will create hypothetical EMR data to help explain these important considerations for data analysis. 
@@ -132,13 +133,168 @@ final_data <- final_data %>%
 print(final_data)
 
 ```
+#EKG 
+
+Now we are going to upload EKG data. For this example, each tracing has been saved as a jpg. EKG data in real life will vary depending on the technology that is used to capture the data. In order to simulate how you would combine this EKG data with our data set, we will be doing a dynamic merging process that matches the EKG file name to the patient ID. In real life, this would be a setting or nameing convention that you would have to either set in your EMR or code afterwards when processing the data. 
 
 ``` {r ekg}
-#
+#Now we have ECG tracing strips for 3 out of our 5 pages. 
+# Step 2: Get the current working directory (where your EKG images are stored)
+ecg_directory <- getwd()
+
+# Step 2: Get the current working directory (where your EKG images are stored)
+ecg_directory <- getwd()
+print(paste("Working Directory:", ecg_directory))  # Debugging: Check the current directory
+
+# Step 3: Function to load EKG images based on id
+load_ecg_image <- function(patient_id) {
+  # Construct the file name (ECG1.jpg, ECG3.jpg, etc.)
+  ecg_file <- file.path(ecg_directory, paste0("ECG", patient_id, ".jpg"))
+  
+  # Debugging: Print the constructed file path
+  print(paste("Looking for file:", ecg_file))
+  
+  # Check if the file exists; if it does, return the image, otherwise return NA
+  if (file.exists(ecg_file)) {
+    return(image_read(ecg_file))
+  } else {
+    print("File not found")  # Debugging: Indicate that the file was not found
+    return(NA)  # No EKG available for this patient
+  }
+}
+
+# Step 4: Apply the function to the 'id' column and store images in 'ECG_image'
+final_data <- final_data %>%
+  rowwise() %>%
+  mutate(ECG_image = list(load_ecg_image(id)))  # Use list() to store images in a column
+
+# Display the final dataframe
+print(final_data)
 ```
+**Q3: What do you notice about this data frame now? How are the EKG images visualized? What else do we need to truly use this data?**
+**R3: Provide your answer here.**
+
+##ECG Visualization 
+
+Now we will go through several exercise on data visualization within the multimodal context. 
+
+```{r visual}
+#We need to be able to use our multimodal data! Let's create a for Loop to do so. 
+# Loop through the dataframe and display each ECG image
+for (i in 1:nrow(final_data)) {
+  # Check if the image is not null and is of class 'magick-image'
+  if (!is.null(final_data$ECG_image[[i]]) && inherits(final_data$ECG_image[[i]], "magick-image")) {
+    print(paste("Displaying ECG for ID:", final_data$id[i]))
+    
+    # Use print() to display the image inline in RStudio or RMarkdown
+    print(final_data$ECG_image[[i]])  
+  } else {
+    print(paste("No ECG image available for ID:", final_data$id[i]))
+  }
+}
+```
+So, that only partially worked. If you see the viewer, we are only looking at one of the ECGs and we are not sure for which patient. We will need to write code to view each patient's ECG. 
+
+```{r visual2}
+# Loop through the dataframe and display each ECG image
+for (i in 1:nrow(final_data)) {
+  # Check if the image is not NULL and is of class 'magick-image'
+  if (!is.null(final_data$ECG_image[[i]]) && inherits(final_data$ECG_image[[i]], "magick-image")) {
+    # Print the patient's ID before showing the image
+    print(paste("Displaying ECG for Patient ID:", final_data$id[i]))
+    
+    # Display the ECG image for the corresponding patient ID
+    print(final_data$ECG_image[[i]])  
+    
+    # Optional: Add a delay of 5 seconds between displays. You will have to look in both the console and viewer for the full picture her. 
+    Sys.sleep(5)
+  } else {
+    # If no ECG is available, print the message for the corresponding ID
+    print(paste("No ECG image available for Patient ID:", final_data$id[i]))
+  }
+}
+
+#alternatively we can print one jpg at a time. 
+
+# Function to display ECG image for a given patient ID
+display_ecg_by_id <- function(patient_id, data) {
+  # Filter the row corresponding to the patient ID
+  row <- data %>% filter(id == patient_id)
+  
+  # Check if the patient has an ECG image and display it
+  if (!is.null(row$ECG_image[[1]]) && inherits(row$ECG_image[[1]], "magick-image")) {
+    print(paste("Displaying ECG for Patient ID:", patient_id))
+    
+    # Display the ECG image
+    print(row$ECG_image[[1]])
+  } else {
+    # If no ECG image is found for the patient
+    print(paste("No ECG image available for Patient ID:", patient_id))
+  }
+}
+
+# Example: Manually input patient ID (e.g., 3)
+patient_id_to_display <- 3  # Change this to any ID you want
+display_ecg_by_id(patient_id_to_display, final_data)
+
+```
+
+**Q4: Manipulate the code to print the ECG for ID=2 and ID=5 below.**
+**R4: Write code in the space below to answer Q4.**
+
+```{r R4}
+#Response 4. Your code should be written here. 
+
+```
+
+#Address
+We know that people live places! This geographic information is often another mode of data we will have in healthcare. Let's play with addresses now! 
 
 ```{r address}
-#
+#AI Use Statement: The use of generative AI was used to give these fake addresses and chunk of code. The prompt was: I want to add address to a data frame that includes IDs 1:5. 
+
+# Example addresses for each patient ID
+addresses <- c(
+  "123 Main St, Buffalo, NY 14201",  # Address for ID 1
+  "456 Elm St, Buffalo, NY 14202",    # Address for ID 2
+  "789 Oak St, Buffalo, NY 14203",    # Address for ID 3
+  "101 Pine St, Buffalo, NY 14204",   # Address for ID 4
+  "202 Maple St, Buffalo, NY 14205"    # Address for ID 5
+)
+
+# Add the addresses to the final_data dataframe
+final_data <- final_data %>%
+  mutate(address = list(addresses))
+
+# Display the updated dataframe with addresses
+print(final_data)
+```
+**Q5: Visualize the addresses. What happened? What could we do with the code to prevent this?**
+**R5: Provide your response here.** 
+
+One option for fixing this issue is below. 
+```{r addresses2}
+# Add the addresses to the final_data dataframe using a direct indexing approach
+final_data$address <- addresses[final_data$id]
+
+# Display the updated dataframe with addresses
+print(final_data)
+```
+**Q6: What other ways might we debug this address issue?**
+**R6: Write code to ammend the addresses appropriately using a different approach than what I did.**
+
+```{r R6}
+#PLace your code to appropriately ammend the addresses in the space below. 
+
 ```
 
+**Q7: What implications does working with multimodal data have on analyses? Can you think of potential pitfalls or benefits of working with multimodal data?**
+**R7: Provide your response here.**
+
 #Citations 
+
+OpenAI. (2024). ChatGPT [AI language model]. Prompt: "I need 5 example hospital SOAP notes that I can use." Retrieved from https://www.openai.com/chatgpt
+
+OpenAI. (2024). ChatGPT [AI language model]. Prompt: "I want to add addresses to a data frame that includes IDs 1:5." Retrieved from https://www.openai.com/chatgpt
+
+
