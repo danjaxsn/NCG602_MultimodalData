@@ -1,0 +1,144 @@
+---
+title: "Multimodal Data Analysis"
+author: "Daniel Smith"
+date: "2024-09-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(officer)
+```
+## Introduction
+In this assignment, we will explore multimodal data analysis, combining different types of data (text, images, numbers). The goal is to integrate these data to address a research question. TO do so, we will create hypothetical EMR data to help explain these important considerations for data analysis. 
+
+### Objectives:
+- Learn how to work with wide and long datasets
+- Transform between wide and long formats
+- Combine different modalities for data analysis
+
+## Part 1: Wide and Long Data Formats
+
+### Creating a Wide Dataset
+We can create a wide dataset using the following R code:
+
+```{r setup}
+# Create a wide dataset example
+wide_data <- tibble(
+  id = c(1, 2, 3, 4, 5),
+  admit_day = c(1, 20, 15, 29, 30),
+  admit_month = c("January", "February", "January", "March", "January"), 
+  admit_year = c(2024, 2024, 2024, 2024, 2024)
+)
+
+# Display the wide dataset
+print(wide_data)
+```
+#Transform from wide to long 
+Now we will transform this dataframe from a wide data frame to a long data frame. We will do this by making a single new variable called "admit_date" that uses the information from our three separate variables above that provide us with date information. This transformation is useful when cleaning/preparing your data set for analysis. For example, In this case, the admit date being combined from three separate columns to one would allow you to conduct time series analyses. 
+
+```{r convert}
+# Convert wide to long format
+long_data <- wide_data %>%
+  pivot_longer(cols = starts_with("admit_"), 
+               names_to = "admit_info", 
+               values_to = "value")
+
+# Display the long dataset
+print(long_data)
+```
+
+```{r}
+
+# Pivot the data without mixing numeric and character data types
+
+# Step 1: Combine admit_day, admit_month, and admit_year into a single column using unite()
+wide_data_united <- wide_data %>%
+  unite("admit_date", c(admit_day, admit_month, admit_year), sep = "-")
+
+# Display the united dataset
+print(wide_data_united)
+
+# Step 2: Transform this dataset into long format
+long_data <- wide_data_united %>%
+  pivot_longer(cols = starts_with("admit_"), 
+               names_to = "admit_info", 
+               values_to = "value")
+
+# Display the long dataset
+print(long_data)
+```
+**Q1: What do you notice is weird about our data frame 'long_data'?**
+
+**R1: Provide your response here.**
+
+Of note, if we don't pivot these variables separately in the above code, we get the following error code. Basically, you can have issues pivoting columns that are not the same variable type...  
+
+Error in `pivot_longer()`:
+! Can't combine `admit_day` <double> and `admit_month` <character>.
+Backtrace:
+ 1. wide_data %>% ...
+ 3. tidyr:::pivot_longer.data.frame(., cols = starts_with("admit_"), names_to = "admit_info", values_to = "value")
+Error in pivot_longer(., cols = starts_with("admit_"), names_to = "admit_info",  :
+
+```{r additionally cleaning}
+#Let's get rid of that weird new "admit_date" variable and rename the "value" column to "admit_date". 
+
+final_data <- long_data %>%
+  select(-admit_info) %>%      # Remove the "admit_info" column
+  rename(admit_date = value)   # Rename "value" column to "admit_date"
+
+print(final_data)
+```
+
+#Moving on to Multimodal Data.
+
+Okay, so now that we have the basics of our EMR data: id and admit date. However, as discussed in class in EMRs we have many types of data that are not just numbers. 
+
+**Q2: Provide examples of three types of healthcare data that are NOT numeric or may require a more complex analysis than descriptive and inferential statistics.**
+**R2: Provide your answer here.** 
+
+```{r soap notes}
+#Each of our patients has a writen SOAP note in their chart. SOAP stands for subjective, objective, assessment, and plan. These are the notes that clinicians will write to communicate their findings of the patient assessment, diagnosis, and care plans.
+
+#Use of AI: the text for these 5 SOAP notes were generated using ChatGPT. The prompt for this generative AI use was: I need 5 example hospital SOAP notes that I can use. 
+
+# Function to read Word document content
+read_word_doc <- function(filepath) {
+  doc <- read_docx(filepath)
+  text <- docx_summary(doc) %>% 
+    filter(content_type == "paragraph") %>% 
+    pull(text) %>% 
+    paste(collapse = "\n")  # Combine paragraphs into a single string
+  return(text)
+}
+
+# Read the SOAP notes from their respective Word files
+SOAP1 <- read_word_doc("SOAP1.docx")
+SOAP2 <- read_word_doc("SOAP2.docx")
+SOAP3 <- read_word_doc("SOAP3.docx")
+SOAP4 <- read_word_doc("SOAP4.docx")
+SOAP5 <- read_word_doc("SOAP5.docx")
+
+# Combine SOAP notes into a vector
+SOAP_notes <- c(SOAP1, SOAP2, SOAP3, SOAP4, SOAP5)
+
+# Add the SOAP notes to the final_data dataframe
+final_data <- final_data %>%
+  mutate(SOAP_note = SOAP_notes)
+
+# Display the updated final_data with SOAP notes
+print(final_data)
+
+```
+
+``` {r ekg}
+#
+```
+
+```{r address}
+#
+```
+
+#Citations 
